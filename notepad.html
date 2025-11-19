@@ -1,0 +1,44 @@
+<style> @media print{body{visibility:hidden;} pre{visibility:visible;overflow:visible !important;}}
+pre{height:90%; padding:2ch; background-color:white; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; }
+body{background-color:rgb(236,237,240);} button{color:rgb(0,100,200); margin-right:9;}
+</style> <script>onload=()=>{
+
+let keyfun={};
+menu([["Open","o",funOpen],["Save","a",funSave],["Print","p",funPrint]]);
+create("input" ,[["id","_n"],["type","text"],["value","filename.txt"]]);
+create("pre"   ,[["id","_e"],["contentEditable","true"]]);
+create("a"     ,[["id","_s"],["hidden",true]]);
+create("input" ,[["id","_o"],["hidden",true],["type","file"]]);
+
+function menu(buns){ for(let [lab,key,fun] of buns){ let e=create("button");
+e.addEventListener("pointerup",keyfun[key]=fun,false);
+e.innerHTML=lab.replace(RegExp(key,"i"),"$&\u0332");
+} }
+
+function create(ele,pvs){
+let e=document.body.appendChild(document.createElement(ele));
+if(pvs)for(let [p,v] of pvs)e[p]=v; return e;
+}
+
+function funOpen(){_o.click();} 
+_o.addEventListener("change",e=>{
+let r=new FileReader(), f=e.target.files[0]; _n.value=f.name;
+r.onload=e=>_e.innerText=e.target.result; r.readAsText(f);
+},false);
+
+function funSave(){
+let url,f=_n.value,t=_e.innerText; if(!f||!t) return;
+_s.href=url=URL.createObjectURL(new File([t],"",{type:"text"}));
+_s.download=_n.value=f.replace(/^\d+/,e=>--e); _s.click();
+URL.revokeObjectURL(url);
+}
+
+function funPrint(){
+let d=document.title=_n.value.replace(/\.[^.]+$/,"");
+print();
+}
+
+addEventListener("keydown",e=>{if(e.altKey)keyfun[e.key]();});
+
+
+}</script><div id=debug></div>
