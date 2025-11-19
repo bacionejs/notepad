@@ -1,44 +1,120 @@
-<style> @media print{body{visibility:hidden;} pre{visibility:visible;overflow:visible !important;}}
-pre{height:90%; padding:2ch; background-color:white; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; }
-body{background-color:rgb(236,237,240);} button{color:rgb(0,100,200); margin-right:9;}
-</style> <script>onload=()=>{
+<style>
+@media print{body{visibility:hidden;} pre{visibility:visible;overflow:visible !important;}}
+pre{
+ height:90%;
+ padding:2ch;
+ background-color:white;
+ overflow-x:auto;
+ transform-origin:0 0;
+ touch-action:pan;
+}
+body{background-color:rgb(236,237,240);}
+button{color:rgb(0,100,200); margin-right:9;}
+
+#toolbar{
+ position:sticky;
+ top:0;
+ background:white;
+ padding:6px;
+ z-index:10;
+ box-shadow:0 2px 4px #0002;
+}
+</style>
+
+<script>
+onload=()=>{
 
 let keyfun={};
-menu([["Open","o",funOpen],["Save","a",funSave],["Print","p",funPrint]]);
-create("input" ,[["id","_n"],["type","text"],["value","filename.txt"]]);
+let zoom=1;
+
+/**********  ELEMENT()  **********/
+function element(e,p){
+ e=document.createElement(e);
+ return (p || document.body).appendChild(e);
+}
+
+/**********  TOOLBAR  **********/
+let bar = element("div");
+bar.id="toolbar";
+
+function menu(buns){
+ for(let [lab,key,fun] of buns){
+  let e=create("button", [["innerHTML", lab.replace(RegExp(key,"i"), "$&\u0332")]], bar);
+  e.addEventListener("pointerup", keyfun[key] = fun, false);
+ }
+}
+
+/**********  ADDED NEW BUTTONS  **********/
+menu([
+ ["Open","o",funOpen],
+ ["Save","a",funSave],
+]);
+
+/**********  ELEMENTS  **********/
+create("input" ,[["id","_n"],["type","text"],["value","filename.txt"]], bar);
 create("pre"   ,[["id","_e"],["contentEditable","true"]]);
 create("a"     ,[["id","_s"],["hidden",true]]);
 create("input" ,[["id","_o"],["hidden",true],["type","file"]]);
 
-function menu(buns){ for(let [lab,key,fun] of buns){ let e=create("button");
-e.addEventListener("pointerup",keyfun[key]=fun,false);
-e.innerHTML=lab.replace(RegExp(key,"i"),"$&\u0332");
-} }
-
-function create(ele,pvs){
-let e=document.body.appendChild(document.createElement(ele));
-if(pvs)for(let [p,v] of pvs)e[p]=v; return e;
+/**********  CREATE() FIXED  **********/
+function create(ele,pvs,par){
+ let e = element(ele, par);
+ if(pvs) for(let [p,v] of pvs) e[p] = v;
+ return e;
 }
 
-function funOpen(){_o.click();} 
+/**********  FILE OPEN  **********/
+function funOpen(){_o.click();}
 _o.addEventListener("change",e=>{
-let r=new FileReader(), f=e.target.files[0]; _n.value=f.name;
-r.onload=e=>_e.innerText=e.target.result; r.readAsText(f);
+ let r=new FileReader(), f=e.target.files[0]; _n.value=f.name;
+ r.onload=e=>_e.innerText=e.target.result;
+ r.readAsText(f);
 },false);
 
+/**********  FILE SAVE  **********/
 function funSave(){
-let url,f=_n.value,t=_e.innerText; if(!f||!t) return;
-_s.href=url=URL.createObjectURL(new File([t],"",{type:"text"}));
-_s.download=_n.value=f.replace(/^\d+/,e=>--e); _s.click();
-URL.revokeObjectURL(url);
+ let url,f=_n.value,t=_e.innerText; if(!f||!t) return;
+ _s.href=url=URL.createObjectURL(new File([t],"",{type:"text"}));
+ _s.download=_n.value=f.replace(/^\d+/,e=>--e);
+ _s.click();
+ URL.revokeObjectURL(url);
 }
 
-function funPrint(){
-let d=document.title=_n.value.replace(/\.[^.]+$/,"");
-print();
-}
+/**********  ALT KEY SHORTCUTS  **********/
+addEventListener("keydown",e=>{
+ if(e.altKey && keyfun[e.key]) keyfun[e.key]();
+});
 
-addEventListener("keydown",e=>{if(e.altKey)keyfun[e.key]();});
+/**********  PINCH + WHEEL ZOOM  **********/
+let pre=_e;
+let lastDist=0;
 
+pre.addEventListener("touchmove",e=>{
+ if(e.touches.length==2){
+  e.preventDefault();
+  let [a,b]=e.touches;
+  let dx=a.pageX-b.pageX, dy=a.pageY-b.pageY;
+  let dist=Math.hypot(dx,dy);
 
-}</script><div id=debug></div>
+  if(lastDist){
+   zoom *= dist/lastDist;
+   zoom=Math.min(Math.max(zoom,0.3),5);
+   pre.style.transform=`scale(${zoom})`;
+  }
+  lastDist=dist;
+ }
+},{passive:false});
+
+pre.addEventListener("touchend",()=>lastDist=0);
+
+pre.addEventListener("wheel",e=>{
+ if(e.ctrlKey){
+  e.preventDefault();
+  zoom *= (e.deltaY<0?1.1:0.9);
+  zoom=Math.min(Math.max(zoom,0.3),5);
+  pre.style.transform=`scale(${zoom})`;
+ }
+},{passive:false});
+
+};
+</script>
