@@ -1,3 +1,6 @@
+---
+
+[Open][https://bacionejs.github.io/notepad/notepad.html]
 
 ---
 
